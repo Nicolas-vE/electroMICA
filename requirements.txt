@@ -6,11 +6,6 @@ nibabel>=4.0.2
 # ANTsPy (used as `ants` in the code). Install as `antspyx` if using pip.
 antspyx>=0.3.0
 
-# Documentation (Sphinx)
-sphinx>=5.0.0
-sphinx-rtd-theme>=1.0.0
-sphinx-autodoc-typehints>=1.18.0
-
 # Notes:
 # - Some packages (ANTsPy/ANTs) may require system-level dependencies.
 # - Pin exact versions according to your environment and CI requirements.
