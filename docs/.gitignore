@@ -1,0 +1,17 @@
+# Build artifacts
+_build/
+_templates/
+
+# IDE and OS
+.DS_Store
+*.pyc
+__pycache__/
+*.egg-info/
+.venv/
+.env
+
+# Editor backups
+*~
+*.swp
+*.swo
+.#*
