@@ -5,22 +5,29 @@
 electroMICA
 ===========
 
-**Project intracranial (iEEG) and scalp EEG features onto cortical and hippocampal surfaces.**
+**Integrate electrophysiological and brain imaging data.**
 
 `electroMICA` is developed by `MICA Lab <https://mica-mni.github.io>`_ at McGill University for use at 
 `the Neuro <https://www.mcgill.ca/neuro/>`_, McConnell Brain Imaging Center (`BIC <https://www.mcgill.ca/bic/>`_).
 
 The main goal of `electroMICA` is to provide a robust framework to integrate electrophysiological data 
 (scalp EEG, intracranial EEG, stereo-EEG) with information derived from multimodal MR images processed 
-by `micapipe <https://micapipe.readthedocs.io>`_.
+by `micapipe <https://micapipe.readthedocs.io>`_and `hippunfold <https://hippunfold.readthedocs.io>`. It contains two pipelines:
+
+**electroMICA_iEEG:**
+    Projects intracranial EEG features (e.g. event rates) onto cortical and hipocampal surfaces.
 
 .. image:: ../img/workflow-iEEG.png
    :alt: electroMICA iEEG Workflow
-   :width: 45%
+   :width: 90%
+
+**electroMICA_scalp**
+
+    Computes an Electric Source Imaging solution for scalp EEG data on the cortical and hippocampal surfaces.
 
 .. image:: ../img/workflow-scalp.png
    :alt: electroMICA Scalp EEG Workflow
-   :width: 45%
+   :width: 90%
 
 .. toctree::
    :maxdepth: 2
@@ -37,9 +44,7 @@ Highlights
 ----------
 
 - **Multimodal integration**: Seamlessly integrates electrophysiology with `micapipe` structural and functional outputs.
-- **BEM formulations**: Uses Boundary Element Method (BEM) to compute sensitivity profiles and leadfields.
-- **Flexible surfaces**: Projects features onto cortical and (optionally) hippocampal surfaces.
-- **Multiple modalities**: Supports intracranial EEG, scalp EEG, and stereo-EEG projections.
+- **Detailed individualized surfaces**: Projects features onto cortical and (optionally) hippocampal surfaces.
 - **BIDS-compliant**: Follows Brain Imaging Data Structure (BIDS) conventions.
 
 Quick Start
@@ -64,12 +69,12 @@ See :ref:`installation` and :ref:`usage` for detailed instructions.
 Key Features
 ------------
 
-**iEEG Projection**
+**intracerebral or stereo EEG**
    Depth electrodes are modeled as line segments in a single-layer homogeneous conductor.
    Contact sensitivity profiles are computed via BEM with analytic element integration.
    Features are mapped to cortical/hippocampal vertices using contact sensitivity weighting.
 
-**Scalp EEG Projection**
+**Scalp EEG**
    A three-layer head model (scalp, skull, brain) is constructed from T1w MRI.
    Forward problem solved using BEM to compute leadfields from sources to electrodes.
    Inverse problem solved with modified eLORETA with spatial correlation weighting.
@@ -89,6 +94,11 @@ If you use `electroMICA` in your research, please cite:
 Additionally, when using `electroMICA`, you should cite:
 
 - `micapipe` — Cruces, R. R., et al. (2022). Micapipe: a pipeline for multimodal neuroimaging and connectome analysis. NeuroImage, 119612.
+
+If you use HippUnfold, please cite
+
+- `hippunfold` — DeKraker, J., et al. (2022), Automated hippocampal unfolding for morphometry and subfield segmentation with HippUnfold. elife 11: e77945.
+
 
 See :ref:`algorithm` for detailed algorithmic references.
 

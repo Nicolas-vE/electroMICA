@@ -16,18 +16,13 @@ General
    Run `micapipe` on your structural MRI first, then use `electroMICA`.
 
 **Can I use electroMICA without electrode data?**
-   For iEEG: Yes, if you have precomputed sensitivity profiles.
-   For scalp EEG: You can build the BEM head model without electrode data, but feature mapping 
-   requires electrode locations.
+   For iEEG: No.
+   For scalp EEG: Only for channels involving electrodes of the 10-10 or 10-20 position systems.
 
 **What electrode types does electroMICA support?**
-   - **iEEG**: Depth electrodes (linear or grid arrays), modeled as line segments.
+   - **iEEG**: Depth electrodes, modeled as line segments.
    - **Scalp EEG**: Standard 10-20, 10-10, or custom electrode montages.
-   - **Stereo-EEG**: Similar to iEEG; supported via standard electrode.tsv format.
 
-**Does electroMICA work with other surface pipelines (FreeSurfer, HCP, etc.)?**
-   Currently, `electroMICA` is optimized for `micapipe` outputs. Support for other pipelines 
-   can be added; contact the developers.
 
 Installation & Setup
 --------------------
@@ -58,82 +53,15 @@ Installation & Setup
 Data Preparation
 -----------------
 
-**What BIDS structure does electroMICA expect?**
-   Standard BIDS with:
-
-   .. code-block::
-
-      BIDS_dataset/
-      ├── sub-XX/
-      │   └── ses-YY/
-      │       ├── ieeg/ or eeg/          # Raw EEG data
-      │       │   ├── *_electrodes.tsv
-      │       │   ├── *_channels.tsv
-      │       │   └── *_ieeg.edf (or other format)
-      │       └── derivatives/
-      └── derivatives/
-          ├── micapipe/
-          │   └── sub-XX/ses-YY/anat/, surf/, xfm/, ...
-          └── hippunfold/ (optional)
-              └── sub-XX/ses-YY/surf/, ...
-
-**How do I format my feature file?**
-   TSV format with channel/electrode names and values:
-
-   .. code-block::
-
-      channel_name    value
-      E1              0.45
-      E2              0.52
-      ...
-
-   or with additional metadata:
-
-   .. code-block::
-
-      channel_name    value    unit    metadata
-      E1              0.45     Hz      spike_rate
-      E2              0.52     Hz      spike_rate
-
 **What if my electrode labels don't match BIDS channels.tsv?**
-   Ensure the first column of your feature file matches the ``name`` column in ``channels.tsv``.
    If there are mismatches, `electroMICA` will warn and skip unmatched channels.
-
-**Can I project multiple features at once?**
-   Not in a single call, but you can loop:
-
-   .. code-block:: python
-
-      from electroMICA import electroMICA_iEEG
-      
-      features = ['feature1.tsv', 'feature2.tsv', 'feature3.tsv']
-      for feat in features:
-          electroMICA_iEEG(output_folder, feature=feat)
 
 Running electroMICA
 -------------------
 
-**How long does electroMICA take?**
-   - **iEEG (first run)**: 5–20 minutes (depending on mesh resolution, ~100k vertices = ~15 min)
-   - **iEEG (reusing leadfields)**: 1–2 minutes
-   - **Scalp EEG (first run)**: 10–30 minutes (includes 3-layer head model + BEM + 5 SNR variants)
-   - **Scalp EEG (reusing leadfields)**: 2–5 minutes
-
 **Can I run electroMICA in parallel across subjects?**
    Yes! Each subject is independent. Use joblib, multiprocessing, or submit separate jobs to a cluster.
 
-**My computation is taking too long. How can I speed it up?**
-   - Use precomputed leadfields (don't recompute if unchanged).
-   - Reduce mesh resolution (if possible in `micapipe`).
-   - Use a more powerful machine (BEM solves use LAPACK/BLAS).
-   - For large datasets, parallelize across subjects.
-
-**I get "Memory error" or "out of memory" messages.**
-   The BEM matrices can be large. Solutions:
-   - Use iterative solvers (if available; edit conf.py)
-   - Reduce surface mesh resolution
-   - Process on a machine with more RAM
-   - Use a cluster with distributed memory
 
 Troubleshooting
 ---------------
@@ -155,59 +83,10 @@ Troubleshooting
    If using electrode registration, ensure transform files are present:
    ``<micapipe_derivatives>/<sub>/[ses]/xfm/*_to_nativepro.mat``
 
-   If missing, re-run the electrode-to-MRI registration step.
-
-**My feature maps look noisy or have holes.**
-   Check:
-   - Are your electrode contacts inside the brain? (Contacts outside brain may project poorly.)
-   - Are channel thresholds too strict? (Increase ``ChanTresh`` in electroMICA.py)
-   - Do you have enough electrodes for scalp EEG inverse problem? (Underdetermined if < ~20 electrodes)
-
-**Results don't match visual inspection / prior studies.**
-   Verify:
-   - Electrode coordinates are accurate (check MRI alignment)
-   - Feature values are reasonable (check TSV file format)
-   - BEM head model is well-constructed (inspect scalp/skull/brain boundaries)
-   - Regularization parameter is appropriate for your data SNR
-
-Outputs & Visualization
------------------------
-
-**Where are the projected feature maps?**
-   In the ``maps/`` subfolder of your `electroMICA` derivatives:
-   ``<electroMICA_folder>/maps/*_map.gii``
-
-**How do I visualize GIFTI surface files?**
-   Options:
-   - **FSL**: ``fslview <image.nii> -aux <map.gii>``
-   - **Connectome Workbench**: Open ``.wb.spec`` and load surface + data file
-   - **Python**: ``nibabel`` + ``plotly``, ``matplotlib``, or custom visualization
-   - **Matlab**: GIFTI toolbox for SPM
-
-**Example Python visualization:**
-
-   .. code-block:: python
-
-      import nibabel as nib
-      import numpy as np
-      import matplotlib.pyplot as plt
-      
-      # Load surface and feature map
-      surf = nib.load('sub-XX_...surf.gii')
-      feat = nib.load('sub-XX_...map.gii')
-      
-      coords = surf.darrays[0].data  # vertex coordinates
-      faces = surf.darrays[1].data   # face connectivity
-      values = feat.darrays[0].data  # feature values
-      
-      # Visualize (e.g., using plotly or matplotlib)
-      print(f"Feature range: {values.min():.3f} to {values.max():.3f}")
-
 **Can I compare maps across subjects?**
-   Yes, if they are in a common space (e.g., ``fsLR-32k``). You can:
+   Yes, they are in a common surface (e.g., ``fsLR-32k``). You can:
    - Average maps across subjects
    - Perform group statistics
-   - Align to a population atlas
 
 Contributing & Support
 ----------------------
@@ -221,7 +100,6 @@ Contributing & Support
 **Where can I get more help?**
    - Read the :ref:`algorithm` section for mathematical details
    - Check the :ref:`api` reference for function parameters
-   - Review examples in ``example_electroMICA_iEEG.py`` and ``example_electroMICA_scalp.py``
    - Open a GitHub discussion or issue
 
 **Can electroMICA be used for clinical purposes?**

@@ -13,6 +13,11 @@ based on the Boundary Element Method (BEM).
 Intracranial EEG (iEEG) Method
 ------------------------------
 
+.. image:: ../img/example-iEEG.png
+   :alt: electroMICA iEEG visual example
+   :width: 90%
+
+
 **Problem Setup**
 
 Depth electrodes (intracranial recordings) are modeled as line segments 
@@ -32,12 +37,6 @@ Given:
 
 The forward problem is formulated using the **Boundary Element Method**:
 
-.. math::
-
-   \phi(\mathbf{r}) = \frac{1}{4\pi\sigma} \oint_S \frac{I(\mathbf{r}')}{|\mathbf{r} - \mathbf{r}'|} dS
-
-where :math:`I(\mathbf{r}')` is the current source density on the surface.
-
 **Analytic Element Integration**
 
 To improve accuracy, `electroMICA` uses **analytically integrated basis functions** 
@@ -48,20 +47,17 @@ over triangular surface elements (rather than numerical quadrature). This follow
 
 Each triangular element's contribution is computed analytically, improving both speed and accuracy.
 
+
+.. image:: ../img/figure2.png
+   :alt: approach comparisson
+   :width: 90%
+
+
 **Feature Mapping**
 
 Once the sensitivity profiles are computed, a feature value (e.g., spike rate, power, etc.) 
 at each contact is mapped to the cortical surface as:
 
-.. math::
-
-   F_i = \frac{\sum_k L_{i,k} \cdot f_k}{\sum_k L_{i,k} + \epsilon}
-
-where:
-- :math:`F_i` = projected feature at vertex :math:`i`
-- :math:`L_{i,k}` = sensitivity (leadfield) from vertex :math:`i` to contact :math:`k`
-- :math:`f_k` = measured feature at contact :math:`k`
-- :math:`\epsilon` = small regularization constant
 
 **Thresholding**
 
@@ -70,8 +66,17 @@ To suppress noisy projections, two thresholds are applied:
 1. **Channel threshold** (``ChanTresh``): Contacts contributing < threshold are ignored.
 2. **Global threshold** (``GlobalTresh``): Vertices with total sensitivity < threshold are masked out.
 
+.. image:: ../img/figure3.png
+   :alt: validation
+   :width: 90%
+
+
 Scalp EEG Method
 ----------------
+
+.. image:: ../img/example-scalp.png
+   :alt: electroMICA iEEG visual example
+   :width: 90%
 
 **Problem Setup**
 
@@ -88,8 +93,8 @@ The head model is derived from the subject's T1-weighted MRI:
 3. **Inner boundary** (brain/cortical surface)
 
 Conductivity values (typically):
-- Scalp: :math:`\sigma_{\text{scalp}} = 0.44` S/m
-- Skull: :math:`\sigma_{\text{skull}} = 0.015` S/m (poor conductor)
+- Scalp: :math:`\sigma_{\text{scalp}} = 0.33` S/m
+- Skull: :math:`\sigma_{\text{skull}} = 0.015` S/m
 - Brain: :math:`\sigma_{\text{brain}} = 0.33` S/m
 
 **Forward Problem: BEM Solution**
@@ -97,40 +102,14 @@ Conductivity values (typically):
 The forward problem is: "Given a source distribution on the cortex, what are the 
 resulting potentials at the scalp?"
 
-Using BEM with three layers, a linear system is solved:
-
-.. math::
-
-   G \cdot \mathbf{j} = \mathbf{b}
-
-where:
-- :math:`G` = BEM geometry matrix (encodes the three-layer conductivity structure)
-- :math:`\mathbf{j}` = dipole moment (source orientation × strength)
-- :math:`\mathbf{b}` = boundary integral terms
-
+Using BEM with three layers, a linear system is solved.
 The **leadfield matrix** :math:`K` maps cortical source activity to scalp potentials:
 
-.. math::
-
-   \mathbf{v}_{\text{scalp}} = K \cdot \mathbf{s}
-
-where :math:`\mathbf{s}` is the source distribution on the cortical surface.
 
 **Inverse Problem: eLORETA with Spatial Correlation**
 
 Given measured scalp EEG features, we estimate the underlying cortical source distribution.
-A standard inverse method (eLORETA-like) is used:
-
-.. math::
-
-   \hat{\mathbf{s}} = W \cdot K^T (K W K^T + \lambda I)^{-1} \mathbf{v}
-
-where:
-- :math:`W` = weighting matrix (modified to favor spatial correlation)
-- :math:`\lambda` = regularization parameter (controls solution smoothness)
-- :math:`K^T` = transpose of the leadfield matrix
-
-The **non-diagonal weighting matrix** is constructed to penalize spatially uncorrelated solutions,
+A standard inverse method (eLORETA-like) is with a **non-diagonal weighting matrix** is constructed to penalize spatially uncorrelated solutions,
 encouraging smooth, realistic source patterns.
 
 **Multiple SNR Variants**
@@ -138,10 +117,6 @@ encouraging smooth, realistic source patterns.
 Five feature maps are computed for SNR levels: very high, high, medium, low, very low (in 7 dB steps).
 Different regularization parameters are used for each SNR level, allowing flexibility in interpretation.
 
-**Conductivity Model Options**
-
-If additional anatomical information is available, the skull can be further subdivided 
-(e.g., outer and inner tables) for improved accuracy.
 
 Hippocampal Integration
 -----------------------
@@ -181,30 +156,6 @@ Key papers and methods:
 4. **Head Modeling in EEG**:
    - Hallez, H., et al. (2007). J Neuroeng Rehabil, 4, 46.
 
-5. **micapipe** (preprocessing):
-   - Cruces, R. R., et al. (2022). NeuroImage, 119612.
-
-Implementation Notes
---------------------
-
-**Numerical Stability**
-
-- Matrices are constructed with proper normalization to avoid conditioning issues.
-- Sparse matrix representations are used where applicable (scipy.sparse).
-- Regularization parameters are automatically tuned based on data SNR.
-
-**Computational Efficiency**
-
-- Leadfield matrices are cached and reused across feature computations.
-- Analytic element integration reduces the cost of BEM assembly.
-- For large surface meshes (>100k vertices), iterative solvers may be used instead of direct methods.
-
-**Validation & Quality Control**
-
-Users should inspect:
-- Sensitivity map distributions (to check for artifacts)
-- Projected feature maps (for spatial smoothness and biological plausibility)
-- Residual error in forward/inverse models (optional diagnostics)
 
 See Also
 --------

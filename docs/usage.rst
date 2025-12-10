@@ -16,9 +16,9 @@ Both functions accept standardized parameters and work with BIDS-formatted datas
 Basic Workflow
 --------------
 
-1. **Prepare your BIDS dataset** with:
+1. **Prepare your BIDS datasets** with:
    
-   - Raw EEG/iEEG data in BIDS format
+   - `BIDS-iEEG` or `BIDS-EEG` data (electrode locations, associated anatomical image)
    - `micapipe` derivatives (T1w, surfaces, transforms)
    
 2. **Create feature files** (TSV format) containing the electrophysiological metrics you want to project.
@@ -64,26 +64,39 @@ With optional hippocampal surfaces:
        hippunfold_derivatives="/path/to/hippunfold/derivatives"
    )
 
+for new features once the pipeline has been run previously:
+
+.. code-block:: python
+
+   electroMICA_iEEG(
+       output_folder=output_folder,
+       feature=feature_file
+   )
+
+
 Parameters
 ~~~~~~~~~~
 
 **output_folder** (str)
-   Path to the `electroMICA` derivatives folder where results are stored. 
-   Can be ``sub-XX`` or ``sub-XX/ses-YY``.
+   Path to the `electroMICA` derivatives folder where results are stored. This also identifies the subject and session. Ends in ``sub-XX`` or ``sub-XX/ses-YY``.
 
 **feature** (str)
-   Path to a feature TSV file, or a feature label. If a label is provided (e.g., ``Interictal``),
-   the function searches for a matching file in the ``feat/`` folder.
+   Path to a feature TSV file, or feature label (accepts wildcard "*"). If the string includes no path,
+   the function searches for matching file in the ``feat/`` folder of the `electroMICA` derivatives.
 
 **electrodes** (str, optional)
-   Path to the BIDS iEEG folder, or directly to an ``electrodes.tsv`` file.
-   If omitted, existing sensitivity profiles are used without recomputation.
+   Path to the BIDS iEEG folder, or directly to an ``electrodes.tsv`` file. An assocaited image must also be available.
+   This input can be ommited if the pipeline ran previously for the same subjet/session, existing sensitivity profiles are 
+   then used, speeding up the computations significantly.
 
 **micapipe_derivatives** (str, optional)
-   Path to the `micapipe` derivatives. Required if ``electrodes`` is provided (to copy surfaces and transforms).
+   Path to the `micapipe` derivatives. It can be simply the root ``derivatives/micapipe/`` folder, in which case the first session for the subject is used. If a different sessions is desired, it must point to the specific session folder (``derivatives/micapipe/sub-XX/ses-YY/``). 
+   It can be ommited if the pipeline ran previously for the same subjet/session, existing sensitivity profiles are 
+   then used, speeding up the computations significantly.
 
 **hippunfold_derivatives** (str, optional)
    Path to `hippunfold` derivatives. If provided, hippocampal surfaces are included in the projection.
+   It can be simply the root ``derivatives/micapipe/`` folder, in which case the first session for the subject is used. If a different sessions is desired, it must point to the specific session folder (``derivatives/micapipe/sub-XX/ses-YY/``).
 
 Scalp EEG
 ---------
@@ -122,24 +135,39 @@ With optional hippocampal surfaces:
        hippunfold_derivatives="/path/to/hippunfold/derivatives"
    )
 
+for new features once the pipeline has been run previously:
+
+.. code-block:: python
+
+   electroMICA_ScalpEEG(
+       output_folder=output_folder,
+       feature=feature_file
+   )
+
+
 Parameters
 ~~~~~~~~~~
 
 **output_folder** (str)
-   Path to the `electroMICA` derivatives folder where results are stored.
+   Path to the `electroMICA` derivatives folder where results are stored. This also identifies the subject and session. Ends in ``sub-XX`` or ``sub-XX/ses-YY``.
 
 **feature** (str)
-   Path to a feature TSV file, or a feature label.
+   Path to a feature TSV file, or feature label (accepts wildcard "*"). If the string includes no path,
+   the function searches for matching file in the ``feat/`` folder of the `electroMICA` derivatives.
 
 **electrodes** (str, optional)
-   Path to the BIDS EEG folder, or directly to an ``electrodes.tsv`` file.
-   If omitted, only the BEM head model is built without computing source estimates.
+   Path to the BIDS EEG folder, or directly to an ``electrodes.tsv`` file. 
+   It can be ommited if a subset of the 10-10 or 10-20 standard electrode set is used.
 
 **micapipe_derivatives** (str, optional)
-   Path to the `micapipe` derivatives. Required to build the BEM model and copy surfaces.
+   Path to the `micapipe` derivatives. It can be simply the root ``derivatives/micapipe/`` folder, in which case the first session for the subject is used. If a different sessions is desired, it must point to the specific session folder (``derivatives/micapipe/sub-XX/ses-YY/``). 
+   It can be ommited if the pipeline ran previously for the same subjet/session, existing sensitivity profiles are 
+   then used, speeding up the computations significantly.
 
 **hippunfold_derivatives** (str, optional)
-   Path to `hippunfold` derivatives. If provided, hippocampal surfaces are included.
+   Path to `hippunfold` derivatives. If provided, hippocampal surfaces are included in the projection.
+   It can be simply the root ``derivatives/micapipe/`` folder, in which case the first session for the subject is used. If a different sessions is desired, it must point to the specific session folder (``derivatives/micapipe/sub-XX/ses-YY/``).
+
 
 Feature File Format
 -------------------
@@ -166,6 +194,28 @@ For scalp EEG:
 
 The first column should match electrode/channel names in your BIDS dataset.
 
+
+
+
+Detailed Inputs
+---------------
+
+iEEG:
+- from micapipe/anat/: T1w image, brain mask
+- from micapipe/surf/: L and R, midthickness, fsnative, fsaverage5, fsLR-32k surfaces
+- from hippunfold/surf/ (optional): L and R, midthickness, den-0p5mm and den-2mm
+- from BIDS-iEEG/: electrodes.tsv, associated image (ideally T1w)
+- feature file: channel names and feature values, one column per feature (for bad channels, exclude the channel or assign NaN value to feature)
+
+Scalp EEG:
+- from micapipe/anat/: T1w image, brain mask
+- from micapipe/surf/: L and R, midthickness, fsLR-32k surfaces
+- from micapipe/xfm/: transform files from nativepro to MNI space
+- from hippunfold/surf/ (optional): L and R, midthickness, den-2mm
+- from BIDS-EEG/: electrodes.tsv (optional if standard 10-10/10-20 set is used)
+- feature file: electrode names and feature values, one column per feature (for bad channels, exclude the channel or assign NaN value to feature)
+
+
 Output Structure
 ----------------
 
@@ -177,42 +227,25 @@ After running `electroMICA`, the ``electroMICA`` derivatives folder is organized
    ├── anat/                    # Anatomical images (T1w, brain mask)
    ├── feat/                    # Input feature files
    ├── maps/                    # Projected feature maps (main output)
-   │   ├── sub-XX_ses-YY_..._surf-fsLR-32k_label-midthickness_map.gii
+   │   ├── sub-XX_ses-YY_FEATURE-NAME_SURFACE-NAME.mat
    │   └── ...
    ├── model/                   # Leadfield / sensitivity matrices (.mat files)
    ├── surf/                    # Surface GIFTI files (cortical, hippocampal)
    └── xfm/                     # Transform files (electrode to MRI alignment)
 
-Viewing Results
----------------
+For each feature and surface, a matlab file is created in the with /maps fodler, with the following variables:
+iEEG:
+FeatureValue: Feature value for each channel (per column if multiple features)
+FeatureName: name of the feaatures (per column of the FeatureValue variable)
+FeatureMap: feature values at each vertex of the surface
+Vertices: vertex coordinates of the surface
+Faces: face connectivity of the vertices
 
-Projected feature maps are stored as GIFTI surface files (``.gii``). You can visualize them using:
+Scalp EEG:
+FeatureValue: Feature value for each channel (per column if multiple features)
+FeatureName: name of the feaatures (per column of the FeatureValue variable)
+FeatureMap: feature values at each vertex of the surface
+Vertices: vertex coordinates of the surface
+Faces: face connectivity of the vertices
+Alpha: regularization parameter values (related to SNR level, see :ref:`algorithm`)
 
-- **GIFTI viewers**: FSLView, Connectome Workbench, etc.
-- **Python**: ``nibabel`` / ``plotly`` / custom scripts
-- **Matlab**: GIFTI toolbox
-
-Example visualization (Python):
-
-.. code-block:: python
-
-   import nibabel as nib
-   import numpy as np
-   
-   # Load a feature map
-   gii = nib.load('sub-XX_ses-YY_...map.gii')
-   feature_map = gii.darrays[0].data
-   
-   # Inspect values
-   print(f"Min: {feature_map.min()}, Max: {feature_map.max()}")
-   print(f"Mean: {feature_map.mean()}")
-
-Example Scripts
----------------
-
-See the included example scripts for complete working examples:
-
-- ``example_electroMICA_iEEG.py`` — Example for iEEG projection
-- ``example_electroMICA_scalp.py`` — Example for scalp EEG projection
-
-Edit these scripts with your BIDS paths and run them directly.

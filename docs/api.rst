@@ -70,35 +70,6 @@ Mathematical Utilities
 
    Computes analytic surface integrals for BEM boundary element method.
 
-.. autofunction:: electroMICA.int_scalar
-   :noindex:
-
-   Scalar surface integrals used in BEM calculations.
-
-Data Types and Structures
---------------------------
-
-While `electroMICA` primarily works with standard NumPy arrays and file paths, 
-the following data structures are commonly used:
-
-**Surface Data**
-   Cortical and hippocampal surfaces are represented as GIFTI files (``.gii``) 
-   containing vertex coordinates and face connectivity.
-
-**Feature Files**
-   Feature data are stored as TSV (tab-separated values) files with:
-   - First column: channel/electrode labels
-   - Second column: feature values
-   - Optional additional columns: metadata
-
-**Leadfield Matrices**
-   Computed leadfield matrices are stored as MATLAB ``.mat`` files containing:
-   - ``Sensitivity``: K × N sensitivity matrix (K contacts, N surface vertices)
-   - ``ContactName``: Channel labels
-   - ``VertexIndices``: Indices of surface vertices used
-
-**Output Maps**
-   Projected features are saved as GIFTI surface files with values defined at each vertex.
 
 Dependencies
 ------------
@@ -110,11 +81,6 @@ Core dependencies:
 - **pandas** — Feature file I/O and metadata
 - **nibabel** — Neuroimaging file formats (NIFTI, GIFTI)
 - **antspyx** — Image registration and transforms
-
-Optional:
-
-- **vtk** — 3D visualization and mesh operations
-- **pyvirtualdisplay** — Headless display for servers
 
 Examples
 --------
